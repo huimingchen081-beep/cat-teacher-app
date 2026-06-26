@@ -8,16 +8,47 @@ workflows:
       cocoapods: default
       groups:
         - app_store
-      ios_signing:
-        certificates:
-          - reference: cat_teacher_dist
-        provisioning_profiles:
-          - reference: cat_teacher_profile
     scripts:
       - name: 安装 Flutter 依赖
         script: flutter pub get
-      - name: 编译 iOS IPA
-        script: flutter build ipa --release --export-method app-store
+      - name: 手动安装代码签名证书和 Profile
+        script: |
+          # 从 Codemagic 环境变量文件获取证书和 Profile 路径
+          echo "📦 查找证书和Profile文件..."
+          ls -la $CM_CERTIFICATE || echo "⚠️ CM_CERTIFICATE 未找到"
+          ls -la $CM_PROVISIONING_PROFILE || echo "⚠️ CM_PROVISIONING_PROFILE 未找到"
+
+          # 创建钥匙串并导入证书
+          if [ -f "$CM_CERTIFICATE" ]; then
+            echo "🔑 正在导入证书..."
+            security create-keychain -p "" codemagic.keychain
+            security default-keychain -s codemagic.keychain
+            security unlock-keychain -p "" codemagic.keychain
+            security set-keychain-settings -t 3600 -u codemagic.keychain
+            security import "$CM_CERTIFICATE" \
+              -P Chmchm811 \
+              -A \
+              -k codemagic.keychain \
+              -f pkcs12 || true
+            echo "✅ 证书导入完成"
+          fi
+
+          # 安装 Provisioning Profile
+          if [ -f "$CM_PROVISIONING_PROFILE" ]; then
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+            cp $CM_PROVISIONING_PROFILE ~/Library/MobileDevice/Provisioning\ Profiles/
+            echo "✅ Profile 已复制到 ~/Library/MobileDevice/Provisioning Profiles/"
+          fi
+
+          # 验证
+          echo ""
+          echo "📋 钥匙串中的签名身份:"
+          security find-identity -v -p codesigning codemagic.keychain | head -5
+      - name: 编译 iOS IPA（手动签名）
+        script: |
+          flutter build ipa --release --export-method app-store \
+            --build-name=1.0.0 \
+            --build-number=1
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
