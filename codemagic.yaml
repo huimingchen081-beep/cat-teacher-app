@@ -7,7 +7,7 @@ workflows:
       xcode: 16.0
       cocoapods: default
       groups:
-        - app_store_credentials
+        - app_store
     scripts:
       - name: 安装依赖
         script: flutter pub get
