@@ -14,7 +14,7 @@ workflows:
       - name: 初始化密钥链并安装证书
         script: |
           keychain initialize
-          keychain add-cert "$CM_CERTIFICATE_CAT_TEACHER_DIST"
+          keychain add-certificates "$CM_CERTIFICATE_CAT_TEACHER_DIST"
       - name: 安装 Provisioning Profile
         script: |
           PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
