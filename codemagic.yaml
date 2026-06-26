@@ -4,28 +4,21 @@ workflows:
     max_build_duration: 60
     environment:
       flutter: stable
-      xcode: 16.0
+      xcode: latest
       cocoapods: default
       groups:
         - app_store
+      ios_signing:
+        provisioning_profiles:
+          - profile: cat_teacher_profile
+            certificate: cat_teacher_dist
     scripts:
       - name: 安装依赖
         script: flutter pub get
-      - name: 初始化密钥链并安装证书
-        script: |
-          keychain initialize
-          keychain add-certificates "$CM_CERTIFICATE_CAT_TEACHER_DIST"
-      - name: 安装 Provisioning Profile
-        script: |
-          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILES_DIR"
-          cp "$CM_PROVISIONING_PROFILE_CAT_TEACHER_PROFILE" \
-            "$PROFILES_DIR/$(uuidgen).mobileprovision"
-      - name: 编译 iOS 并签名
-        script: flutter build ipa --release --export-options-plist=/dev/null
+      - name: 编译 iOS IPA
+        script: flutter build ipa --release --export-method app-store
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
