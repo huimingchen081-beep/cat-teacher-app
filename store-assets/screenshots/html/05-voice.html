@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.status-bar { height: 72px; background: #FF8C42; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; font-size: 28px; color: #fff; }
+.app-bar { height: 96px; background: #FF8C42; display: flex; align-items: center; padding: 0 48px; }
+.app-bar .title { font-size: 32px; color: #fff; font-weight: 600; }
+.mode-bar { background: #FF8C42; padding: 12px 36px 16px; display: flex; align-items: center; gap: 16px; }
+.mode-btn { padding: 12px 28px; border-radius: 32px; font-size: 26px; font-weight: 600; }
+.mode-btn.active { background: #fff; color: #FF8C42; }
+.mode-btn:not(.active) { background: rgba(255,255,255,0.2); color: #fff; }
+.mode-bar .subject-tag { margin-left: auto; font-size: 32px; background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 24px; }
+.recording-bar { background: #FFE0E0; padding: 24px 36px; display: flex; align-items: center; gap: 16px; }
+.rec-dot { width: 24px; height: 24px; border-radius: 50%; background: #ff0000; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.rec-text { font-size: 28px; color: #CC0000; font-weight: 500; }
+.rec-done { margin-left: auto; padding: 12px 32px; background: #ff0000; border-radius: 32px; font-size: 26px; color: #fff; font-weight: 600; }
+.msg-list { flex: 1; padding: 16px 36px; }
+.msg { display: flex; margin-bottom: 24px; align-items: flex-start; }
+.msg.bot { justify-content: flex-start; }
+.msg.user { justify-content: flex-end; }
+.msg.bot .avatar { width: 64px; height: 64px; border-radius: 50%; background: #FFF0E0; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-right: 16px; flex-shrink: 0; }
+.msg .bubble { max-width: 580px; padding: 20px 28px; border-radius: 32px; font-size: 28px; line-height: 1.6; }
+.msg.bot .bubble { background: #fff; color: #333; border-top-left-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.msg.user .bubble { background: #FF8C42; color: #fff; border-top-right-radius: 8px; }
+.recording-indicator { display: flex; align-items: center; justify-content: center; padding: 40px; }
+.recording-indicator .ri-wave { display: flex; gap: 8px; align-items: flex-end; height: 100px; }
+.ri-wave .bar { width: 12px; background: #FF8C42; border-radius: 6px; animation: wave 0.8s infinite alternate; }
+.ri-wave .bar:nth-child(1) { height: 30px; animation-delay: 0s; }
+.ri-wave .bar:nth-child(2) { height: 60px; animation-delay: 0.1s; }
+.ri-wave .bar:nth-child(3) { height: 90px; animation-delay: 0.2s; }
+.ri-wave .bar:nth-child(4) { height: 70px; animation-delay: 0.3s; }
+.ri-wave .bar:nth-child(5) { height: 40px; animation-delay: 0.4s; }
+@keyframes wave { 0% { transform: scaleY(0.5); opacity: 0.5; } 100% { transform: scaleY(1); opacity: 1; } }
+.ri-text { font-size: 36px; color: #FF8C42; font-weight: 700; margin-left: 20px; }
+.input-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #EEE; padding: 16px 24px 20px; display: flex; align-items: center; gap: 12px; }
+.plus-btn { width: 72px; height: 72px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #666; }
+.input-field { flex: 1; padding: 20px 28px; background: #FFF0E0; border-radius: 38px; font-size: 26px; color: #FF8C42; border: none; outline: none; text-align: center; }
+.mic-btn { width: 72px; height: 72px; border-radius: 50%; background: #ff0000; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #fff; }
+.send-btn { padding: 20px 36px; background: linear-gradient(135deg, #999, #BBB); border-radius: 38px; color: #fff; font-size: 26px; font-weight: 600; }
+.bottom-nav { position: fixed; bottom: 100px; left: 0; right: 0; height: 120px; background: #fff; border-top: 2px solid #EEE; display: flex; padding-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="status-bar"><span>9:41</span><span style="display:flex;gap:16px">📶 🔋</span></div>
+<div class="app-bar"><span class="title">猫咪老师</span></div>
+<div class="mode-bar">
+  <div class="mode-btn active">问我</div>
+  <div class="mode-btn">讲课</div>
+  <span class="subject-tag">🌍</span>
+</div>
+<div class="recording-bar">
+  <div class="rec-dot"></div>
+  <span class="rec-text">🎤 正在录音... 松开发送</span>
+  <div class="rec-done">完成</div>
+</div>
+<div class="msg-list" style="padding-bottom:300px">
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">喵~ 我是猫咪老师！<br>我是你专属的小学英语辅导老师，有什么问题尽管问我吧！</div>
+  </div>
+  <div class="msg user">
+    <div class="bubble">What's the difference between "in" and "on"?</div>
+  </div>
+  <div class="recording-indicator">
+    <div class="ri-wave">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+    <span class="ri-text">🎙️ 正在听...</span>
+  </div>
+</div>
+<div class="input-bar" style="bottom:120px">
+  <div class="plus-btn">＋</div>
+  <input class="input-field" value="🎤 语音识别中..." readonly>
+  <div class="mic-btn">⏹</div>
+  <div class="send-btn">发送</div>
+</div>
+<div class="bottom-nav">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">🏠</span><span style="font-size:22px;color:#999;margin-top:4px">首页</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">💬</span><span style="font-size:22px;color:#FF8C42;margin-top:4px">对话</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">👤</span><span style="font-size:22px;color:#999;margin-top:4px">我的</span></div>
+</div>
+</body>
+</html>

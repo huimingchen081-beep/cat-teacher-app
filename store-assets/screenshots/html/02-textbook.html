@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.status-bar { height: 72px; background: #FF8C42; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; font-size: 28px; color: #fff; }
+.app-bar { height: 104px; background: #FF8C42; display: flex; align-items: center; padding: 0 24px; }
+.back-btn { font-size: 40px; color: #fff; margin-right: 20px; }
+.app-title { font-size: 30px; color: #fff; font-weight: 600; }
+.breadcrumb { background: linear-gradient(180deg, #FFF0E0, #FFE8D0); padding: 16px 36px; border-bottom: 1px solid #FFD0B0; white-space: nowrap; overflow-x: auto; font-size: 24px; }
+.breadcrumb span { color: #B08060; }
+.breadcrumb .active { color: #D07030; font-weight: 700; }
+.breadcrumb .sep { margin: 0 8px; color: #CC9966; }
+.section-header { padding: 32px 48px 16px; font-size: 32px; font-weight: 700; color: #333; }
+.version-list { padding: 0 32px; }
+.version-card { background: #fff; border-radius: 28px; padding: 32px; margin-bottom: 16px; border: 2px solid #F0E0D0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; }
+.version-card .v-icon { width: 72px; height: 72px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #fff; }
+.version-card .v-info { flex: 1; margin-left: 24px; }
+.version-card .v-name { font-size: 28px; font-weight: 600; color: #333; }
+.version-card .v-meta { font-size: 24px; color: #999; margin-top: 4px; }
+.version-card .v-arrow { font-size: 40px; color: #CCC; }
+.version-card.selected { border-color: #FF8C42; background: #FFFBF5; }
+.version-card.selected .v-icon { background: linear-gradient(135deg, #FF8C42, #FF7043); box-shadow: 0 4px 16px rgba(255,140,66,0.3); }
+.version-card.selected .v-name { color: #FF8C42; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 140px; background: #fff; border-top: 2px solid #EEE; display: flex; padding-bottom: 20px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.nav-item .n-icon { font-size: 44px; }
+.nav-item .n-label { font-size: 22px; margin-top: 4px; color: #999; }
+.nav-item.active .n-label { color: #FF8C42; }
+</style>
+</head>
+<body>
+<div class="status-bar"><span>9:41</span><span style="display:flex;gap:16px">📶 🔋</span></div>
+<div class="app-bar">
+  <span class="back-btn">←</span>
+  <span class="app-title">语文 · 小学教材</span>
+</div>
+<div class="breadcrumb">
+  <span>📚 教材</span><span class="sep">›</span><span>部编版</span><span class="sep">›</span><span class="active">一年级上册</span>
+</div>
+<div class="section-header">选择教材版本</div>
+<div class="version-list">
+  <div class="version-card selected">
+    <div class="v-icon">📖</div>
+    <div class="v-info"><div class="v-name">部编版</div><div class="v-meta">8个学期 · 覆盖全年级</div></div>
+    <div class="v-arrow">›</div>
+  </div>
+  <div class="version-card">
+    <div class="v-icon">📘</div>
+    <div class="v-info"><div class="v-name">人教版</div><div class="v-meta">数学教材专用</div></div>
+    <div class="v-arrow">›</div>
+  </div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item"><span class="n-icon">🏠</span><span class="n-label">首页</span></div>
+  <div class="nav-item active"><span class="n-icon">💬</span><span class="n-label">对话</span></div>
+  <div class="nav-item"><span class="n-icon">👤</span><span class="n-label">我的</span></div>
+</div>
+</body>
+</html>

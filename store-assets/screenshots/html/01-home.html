@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+/* Status bar */
+.status-bar { height: 72px; background: #FFF8F0; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; font-size: 28px; color: #333; }
+.status-bar .time { font-weight: 600; }
+.status-icons { display: flex; gap: 16px; align-items: center; }
+/* Top bar */
+.top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 48px; }
+.points-badge { display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #FFE0B2, #FFCC80); border-radius: 32px; }
+.points-badge .star { font-size: 28px; }
+.points-badge .val { font-size: 28px; font-weight: 700; color: #E65100; }
+.signin-btn { padding: 12px 32px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 32px; color: #fff; font-size: 26px; font-weight: 500; }
+/* Grade tabs */
+.grade-tabs { margin: 0 48px 24px; display: flex; background: #fff; border-radius: 40px; box-shadow: 0 4px 24px rgba(255,140,66,0.12); overflow: hidden; }
+.grade-tab { flex: 1; text-align: center; padding: 24px 0; cursor: pointer; transition: all .2s; }
+.grade-tab.active { background: linear-gradient(135deg, #FF8C42, #FFB885); color: #fff; border-radius: 40px; }
+.grade-tab .emoji { font-size: 36px; display: block; }
+.grade-tab .label { font-size: 26px; margin-top: 4px; display: block; }
+.grade-tab:not(.active) .label { color: #666; }
+/* Cat display */
+.cat-section { display: flex; flex-direction: column; align-items: center; padding: 24px 0 20px; }
+.cat-avatar { width: 280px; height: 280px; border-radius: 50%; background: linear-gradient(135deg, #FFF0E0, #FFF8F0); box-shadow: 0 8px 40px rgba(255,140,66,0.15); display: flex; align-items: center; justify-content: center; font-size: 140px; }
+.cat-bubble { margin-top: 20px; padding: 20px 40px; background: #fff; border-radius: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); font-size: 26px; color: #333; }
+/* Subject grid */
+.section-title { padding: 0 56px 16px; font-size: 28px; font-weight: 600; color: #333; }
+.subject-scroll { padding: 0 48px; display: flex; gap: 16px; overflow-x: auto; }
+.subject-card { min-width: 128px; height: 152px; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; }
+.subject-card.selected { background: #FFF0E0; border: 4px solid #FF8C42; box-shadow: 0 4px 16px rgba(255,140,66,0.15); }
+.subject-card:not(.selected) { background: #fff; border: 2px solid #EEE; }
+.subject-card .s-emoji { font-size: 48px; }
+.subject-card .s-name { font-size: 24px; font-weight: 600; margin-top: 8px; }
+.subject-card.selected .s-name { color: #FF8C42; }
+.subject-card:not(.selected) .s-name { color: #333; }
+/* Quick actions */
+.actions { padding: 32px 48px; display: flex; gap: 16px; }
+.actions .section-title { padding: 0 0 16px 0; }
+.action-card { flex: 1; background: #fff; border-radius: 28px; padding: 28px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+.action-card .a-icon { font-size: 48px; }
+.action-card .a-label { font-size: 28px; font-weight: 600; color: #333; margin-top: 8px; }
+.action-card .a-desc { font-size: 22px; color: #999; margin-top: 4px; }
+/* Bottom nav */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 140px; background: #fff; border-top: 2px solid #EEE; display: flex; padding-bottom: 20px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.nav-item .n-icon { font-size: 44px; }
+.nav-item .n-label { font-size: 22px; margin-top: 4px; color: #999; }
+.nav-item.active .n-label { color: #FF8C42; }
+.wrap { padding-bottom: 120px; }
+</style>
+</head>
+<body>
+<div class="status-bar"><span class="time">9:41</span><span class="status-icons">📶 🔋 90%</span></div>
+<div class="top-bar">
+  <div class="points-badge"><span class="star">⭐</span><span class="val">128</span></div>
+  <div class="signin-btn">签到</div>
+</div>
+<div class="grade-tabs">
+  <div class="grade-tab active"><span class="emoji">🌟</span><span class="label">小学</span></div>
+  <div class="grade-tab"><span class="emoji">📚</span><span class="label">初中</span></div>
+  <div class="grade-tab"><span class="emoji">🎓</span><span class="label">高中</span></div>
+</div>
+<div class="cat-section">
+  <div class="cat-avatar">🐱</div>
+  <div class="cat-bubble">喵~ 选一个学科，我来教你！</div>
+</div>
+<div class="wrap">
+<div class="section-title">选择学科</div>
+<div class="subject-scroll">
+  <div class="subject-card selected"><span class="s-emoji">📖</span><span class="s-name">语文</span></div>
+  <div class="subject-card"><span class="s-emoji">🔢</span><span class="s-name">数学</span></div>
+  <div class="subject-card"><span class="s-emoji">🌍</span><span class="s-name">英语</span></div>
+  <div class="subject-card"><span class="s-emoji">⚖️</span><span class="s-name">道法</span></div>
+  <div class="subject-card"><span class="s-emoji">🔬</span><span class="s-name">科学</span></div>
+</div>
+<div style="padding: 32px 48px;">
+  <div class="section-title" style="padding:0 0 16px 0">快捷入口</div>
+  <div class="actions" style="padding:0">
+    <div class="action-card"><div class="a-icon">💬</div><div class="a-label">提问猫咪</div><div class="a-desc">问任何学习问题</div></div>
+    <div class="action-card"><div class="a-icon">🎓</div><div class="a-label">猫咪讲课</div><div class="a-desc">按教材章节上课</div></div>
+  </div>
+</div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item active"><span class="n-icon">🏠</span><span class="n-label">首页</span></div>
+  <div class="nav-item"><span class="n-icon">💬</span><span class="n-label">对话</span></div>
+  <div class="nav-item"><span class="n-icon">👤</span><span class="n-label">我的</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.status-bar { height: 72px; background: #FF8C42; display: flex; align-items: center; justify-content: space-between; padding: 0 48px; font-size: 28px; color: #fff; }
+.app-bar { height: 96px; background: #FF8C42; display: flex; align-items: center; padding: 0 48px; }
+.app-bar .title { font-size: 32px; color: #fff; font-weight: 600; }
+.mode-bar { background: #FF8C42; padding: 12px 36px 16px; display: flex; align-items: center; gap: 16px; }
+.mode-btn { padding: 12px 28px; border-radius: 32px; font-size: 26px; font-weight: 600; }
+.mode-btn.active { background: #fff; color: #FF8C42; }
+.mode-btn:not(.active) { background: rgba(255,255,255,0.2); color: #fff; }
+.mode-bar .subject-tag { margin-left: auto; font-size: 32px; background: rgba(255,255,255,0.15); padding: 8px 20px; border-radius: 24px; }
+.image-preview-bar { background: #FFF8F0; padding: 16px 36px; display: flex; align-items: center; gap: 12px; font-size: 26px; color: #666; border-bottom: 1px solid #F0E0D0; }
+.image-preview-bar .close-btn { width: 40px; height: 40px; border-radius: 50%; background: #EEE; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #999; margin-left: auto; }
+.msg-list { flex: 1; padding: 16px 36px; }
+.msg { display: flex; margin-bottom: 24px; align-items: flex-start; }
+.msg.bot { justify-content: flex-start; }
+.msg.user { justify-content: flex-end; }
+.msg.bot .avatar { width: 64px; height: 64px; border-radius: 50%; background: #FFF0E0; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-right: 16px; flex-shrink: 0; }
+.msg .bubble { max-width: 580px; padding: 20px 28px; border-radius: 32px; font-size: 28px; line-height: 1.6; }
+.msg.bot .bubble { background: #fff; color: #333; border-top-left-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.msg.user .bubble { background: #FF8C42; color: #fff; border-top-right-radius: 8px; }
+.msg.user .bubble .photo-thumb { width: 100%; max-width: 480px; aspect-ratio: 4/3; background: linear-gradient(135deg, #e8f4f8, #d0e8f0); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 12px; }
+.photo-thumb .pt-icon { font-size: 72px; }
+.photo-thumb .pt-text { font-size: 24px; color: #FF8C42; font-weight: 600; margin-top: 8px; }
+.photo-thumb .pt-expr { font-size: 32px; font-weight: 700; color: #333; letter-spacing: 4px; margin-top: 8px; }
+.input-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #EEE; padding: 16px 24px 20px; display: flex; align-items: center; gap: 12px; }
+.plus-btn { width: 72px; height: 72px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #666; }
+.input-field { flex: 1; padding: 20px 28px; background: #F5F5F5; border-radius: 38px; font-size: 28px; color: #333; border: none; outline: none; }
+.mic-btn { width: 72px; height: 72px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+.send-btn { padding: 20px 36px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 38px; color: #fff; font-size: 26px; font-weight: 600; }
+.bottom-nav { position: fixed; bottom: 100px; left: 0; right: 0; height: 120px; background: #fff; border-top: 2px solid #EEE; display: flex; padding-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="status-bar"><span>9:41</span><span style="display:flex;gap:16px">📶 🔋</span></div>
+<div class="app-bar"><span class="title">猫咪老师</span></div>
+<div class="mode-bar">
+  <div class="mode-btn active">问我</div>
+  <div class="mode-btn">讲课</div>
+  <span class="subject-tag">🔢</span>
+</div>
+<div class="image-preview-bar">
+  📷 点击发送识别图片
+  <div class="close-btn">✕</div>
+</div>
+<div class="msg-list" style="padding-bottom:200px">
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">喵~ 我是猫咪老师！<br>我是你专属的小学数学辅导老师，有什么问题尽管问我吧！</div>
+  </div>
+  <div class="msg user">
+    <div class="bubble">
+      <div class="photo-thumb">
+        <span class="pt-icon">📷</span>
+        <span class="pt-text">数学题拍照</span>
+        <span class="pt-expr">3x + 5 = 20<br>求 x = ?</span>
+      </div>
+      这道题怎么做？
+    </div>
+  </div>
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">喵~ 我看到你拍的方程题了！<br><br>📝 <b>3x + 5 = 20</b><br><br>🔍 解题步骤：<br>第①步：移项<br>3x = 20 − 5<br>3x = 15<br><br>第②步：两边除以3<br>x = 15 ÷ 3<br><br>🎯 <b>x = 5</b><br><br>✅ 验证：3 × 5 + 5 = 20 ✓</div>
+  </div>
+</div>
+<div class="input-bar" style="bottom:120px">
+  <div class="plus-btn">＋</div>
+  <input class="input-field" placeholder="输入问题...">
+  <div class="mic-btn">🎤</div>
+  <div class="send-btn">发送</div>
+</div>
+<div class="bottom-nav">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">🏠</span><span style="font-size:22px;color:#999;margin-top:4px">首页</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">💬</span><span style="font-size:22px;color:#FF8C42;margin-top:4px">对话</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:44px">👤</span><span style="font-size:22px;color:#999;margin-top:4px">我的</span></div>
+</div>
+</body>
+</html>
