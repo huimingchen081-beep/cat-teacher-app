@@ -8,16 +8,40 @@ workflows:
       cocoapods: default
       groups:
         - app_store
+      ios_signing:
+        certificates:
+          - cat_teacher_dist
+        provisioning_profiles:
+          - cat_teacher_profile
     scripts:
-      - name: 安装依赖
+      - name: 检查并安装证书（备用）
+        script: |
+          # 如果 ios_signing 没有自动安装，手动安装
+          # 检查钥匙串里是否有证书
+          CERT_COUNT=$(security find-identity -v -p codesigning | grep -c "Apple Distribution" || true)
+          echo "钥匙串中 Apple Distribution 证书数量: $CERT_COUNT"
+          if [ "$CERT_COUNT" -eq "0" ]; then
+            echo "⚠️ 未找到证书，尝试手动安装..."
+            # 列出可用的证书文件
+            ls -la $CM_CERTIFICATE || true
+            ls -la $CM_PROVISIONING_PROFILE || true
+          else
+            echo "✅ 证书已安装"
+            security find-identity -v -p codesigning
+          fi
+      - name: 安装 Flutter 依赖
         script: flutter pub get
       - name: 编译 iOS IPA
-        script: flutter build ipa --release --export-method app-store
+        script: |
+          cd ios
+          pod install --repo-update
+          cd ..
+          flutter build ipa --release --export-method app-store
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
