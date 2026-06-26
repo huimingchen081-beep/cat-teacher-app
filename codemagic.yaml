@@ -10,15 +10,12 @@ workflows:
         - app_store
       ios_signing:
         certificates:
-          - cat_teacher_dist
+          - reference: cat_teacher_dist
         provisioning_profiles:
-          - cat_teacher_profile
+          - reference: cat_teacher_profile
     scripts:
       - name: 安装 Flutter 依赖
         script: flutter pub get
-      - name: 配置 iOS 代码签名
-        script: |
-          xcode-project use-profiles --project ios/Runner.xcworkspace
       - name: 编译 iOS IPA
         script: flutter build ipa --release --export-method app-store
     artifacts:
