@@ -11,17 +11,18 @@ workflows:
     scripts:
       - name: 安装依赖
         script: flutter pub get
-      - name: 初始化代码签名
-        script: keychain initialize
-      - name: 获取签名文件
+      - name: 初始化密钥链并安装证书
         script: |
-          app-store-connect fetch-signing-files "com.huiqin.cat_teacher" \
-            --type IOS_APP_STORE \
-            --create
-      - name: 应用签名配置
-        script: xcode-project use-profiles
-      - name: 编译 iOS
-        script: flutter build ipa --release
+          keychain initialize
+          keychain add-cert "$CM_CERTIFICATE_CAT_TEACHER_DIST"
+      - name: 安装 Provisioning Profile
+        script: |
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          cp "$CM_PROVISIONING_PROFILE_CAT_TEACHER_PROFILE" \
+            "$PROFILES_DIR/$(uuidgen).mobileprovision"
+      - name: 编译 iOS 并签名
+        script: flutter build ipa --release --export-options-plist=/dev/null
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
