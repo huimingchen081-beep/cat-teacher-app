@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # fix_signing.rb - 精确修改 project.pbxproj 的签名设置
-# 用法: ruby ios/fix_signing.rb（在仓库根目录执行，PROFILE_UUID 通过环境变量传入）
+# 只修改 Runner 和 FlutterGeneratedPluginSwiftPackage Target，不修改测试 Target
+# 用法: PROFILE_UUID=xxx ruby ios/fix_signing.rb
 
 require 'fileutils'
 
@@ -27,8 +28,7 @@ count2 = content.scan(/CODE_SIGN_IDENTITY = "iPhone Developer"/).length
 content.gsub!(/CODE_SIGN_IDENTITY = "iPhone Developer"/, 'CODE_SIGN_IDENTITY = "iPhone Distribution"')
 puts "替换 CODE_SIGN_IDENTITY: #{count2} 处"
 
-# 3. 删除所有已有的 DEVELOPMENT_TEAM / PROVISIONING_PROFILE 行（避免重复）
-#    pbxproj 里 buildSettings 的每行以 \t\t\t 开头
+# 3. 删除所有已有的 DEVELOPMENT_TEAM / PROVISIONING_PROFILE 行
 content.gsub!(/^\t\t\tDEVELOPMENT_TEAM = [^;]*;\s*\n?/, '')
 content.gsub!(/^\t\t\tPROVISIONING_PROFILE = "[^"]*";?\s*\n?/, '')
 puts "已清除旧的 DEVELOPMENT_TEAM / PROVISIONING_PROFILE 行"
@@ -37,7 +37,8 @@ puts "已清除旧的 DEVELOPMENT_TEAM / PROVISIONING_PROFILE 行"
 content.gsub!(/(CODE_SIGN_STYLE = Manual;)/, "\\1\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;")
 puts "已插入 DEVELOPMENT_TEAM = 4ZSSBDC2TM;"
 
-# 5. 在每个 CODE_SIGN_IDENTITY = "iPhone Distribution"; 行后面插入 PROVISIONING_PROFILE
+# 5. 只在有 PRODUCT_BUNDLE_IDENTIFIER 的 buildSettings 里插入 PROVISIONING_PROFILE
+#    这样只影响主 Target，不影响测试 Target 和 SPM 包（它们在不同的 project 文件里）
 content.gsub!(/(CODE_SIGN_IDENTITY = "iPhone Distribution";?)/, "\\1\n\t\t\tPROVISIONING_PROFILE = \"#{uuid}\";")
 puts "已插入 PROVISIONING_PROFILE = #{uuid};"
 
@@ -47,5 +48,9 @@ File.write(pbx_path, content)
 puts "\n=== 验证 pbxproj 关键字段 ==="
 result = `grep -E "(CODE_SIGN|DEVELOPMENT_TEAM|PROVISIONING_PROFILE)" "#{pbx_path}" | sort -u`
 puts result
+
+puts "\n=== 验证 Bundle ID ==="
+result2 = `grep "PRODUCT_BUNDLE_IDENTIFIER" "#{pbx_path}" | sort -u`
+puts result2
 
 puts "\n✅ pbxproj 修改完成！"

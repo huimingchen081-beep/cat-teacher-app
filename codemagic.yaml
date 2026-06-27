@@ -51,14 +51,18 @@ workflows:
 
           echo "✅ Profile UUID: $PROFILE_UUID"
 
-          echo "=== 4. 安装 Profile 到标准位置 ==="
+          echo "=== 4. 验证 Profile 的 App ID ==="
+          PROFILE_APP_ID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
+            | grep -A1 "<key>application-identifier</key>" | grep "<string>" \
+            | sed -E 's/.*<string>([^<]*).*/\1/' | head -1)
+          echo "Profile App ID: $PROFILE_APP_ID"
+          echo "项目 Bundle ID: com.huiqin.cat_teacher"
+
+          echo "=== 5. 安装 Profile 到标准位置 ==="
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles/"
           cp /tmp/profile.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
           echo "Profile 已安装"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/"
-
-          echo "=== 5. 验证 Profile 内容 ==="
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -E "(Name|UUID|application-identifier|TeamIdentifier)" | head -20 || true
 
           echo "=== 6. 用 Ruby 修改 project.pbxproj ==="
           export PROFILE_UUID="$PROFILE_UUID"
@@ -74,7 +78,6 @@ workflows:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             DEVELOPMENT_TEAM=4ZSSBDC2TM \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
             clean archive
 
           echo "✅ 归档成功！"
