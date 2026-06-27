@@ -9,8 +9,18 @@ workflows:
       groups:
         - app_store
     scripts:
-      - name: 安装 Flutter 依赖
-        script: flutter pub get
+      - name: 安装 Flutter 依赖 + 生成 Podfile
+        script: |
+          set -e
+          flutter pub get
+          # 生成 Podfile（不实际编译，只生成 iOS 配置）
+          cd ios
+          pod init || true
+          cd ..
+          # 用 flutter 命令触发 Podfile 生成
+          flutter build ios --release --no-codesign 2>&1 | head -50 || true
+          # 确认 Podfile 存在
+          ls -la ios/Podfile
 
       - name: 解码并安装代码签名证书和Profile
         script: |
@@ -63,16 +73,15 @@ workflows:
           echo "🔍 验证安装的 Profile:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
-      - name: 准备 iOS 构建（pod install + 修改签名设置）
+      - name: pod install + 修改 Xcode 项目签名设置
         script: |
           set -e
           cd ios
 
           echo "📦 执行 pod install..."
-          pod install --repo-update || pod install
+          pod install
 
-          echo "🔧 修改 Xcode 项目签名设置为手动..."
-          # 用 PlistBuddy 修改项目配置为手动签名
+          echo "🔧 修改 Xcode 项目为手动签名..."
           python3 << 'PYEOF'
           import re
 
@@ -84,9 +93,14 @@ workflows:
           # 改为手动签名
           content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
 
-          # 添加 DEVELOPMENT_TEAM（如果还没有）
+          # 确保有 DEVELOPMENT_TEAM
           if 'DEVELOPMENT_TEAM = 4ZSSBDC2TM;' not in content:
-              content = content.replace('CODE_SIGN_STYLE = Manual;', 'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;')
+              # 在第一个 CODE_SIGN_STYLE 后面加上团队 ID
+              content = content.replace(
+                  'CODE_SIGN_STYLE = Manual;\n',
+                  'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;\n',
+                  1
+              )
 
           with open(pbxproj, 'w') as f:
               f.write(content)
@@ -96,7 +110,7 @@ workflows:
 
           cd ..
 
-      - name: 编译 iOS IPA（使用 xcodebuild 手动归档）
+      - name: 编译 iOS IPA（xcodebuild 手动归档）
         script: |
           set -e
 
