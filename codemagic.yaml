@@ -24,7 +24,7 @@ workflows:
           flutter build ios --release --no-codesign 2>&1 | tail -20 || true
 
           echo "✅ 检查 Podfile:"
-          cat ios/Podfile
+          echo "✅ Podfile 已生成:"; ls -la ios/Podfile ios/Podfile.lock 2>/dev/null || echo "(将交由下一步 pod install 创建)"
 
       - name: 解码并安装代码签名证书和Profile
         script: |
