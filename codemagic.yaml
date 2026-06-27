@@ -11,46 +11,78 @@ workflows:
     scripts:
       - name: 安装 Flutter 依赖
         script: flutter pub get
-      - name: 手动安装代码签名证书和 Profile
+
+      - name: 解码并安装代码签名证书和Profile
         script: |
-          # 从 Codemagic 环境变量文件获取证书和 Profile 路径
-          echo "📦 查找证书和Profile文件..."
-          ls -la $CM_CERTIFICATE || echo "⚠️ CM_CERTIFICATE 未找到"
-          ls -la $CM_PROVISIONING_PROFILE || echo "⚠️ CM_PROVISIONING_PROFILE 未找到"
+          set -e
+          echo "🔍 检查环境变量..."
 
-          # 创建钥匙串并导入证书
-          if [ -f "$CM_CERTIFICATE" ]; then
-            echo "🔑 正在导入证书..."
-            security create-keychain -p "" codemagic.keychain
-            security default-keychain -s codemagic.keychain
-            security unlock-keychain -p "" codemagic.keychain
-            security set-keychain-settings -t 3600 -u codemagic.keychain
-            security import "$CM_CERTIFICATE" \
-              -P Chmchm811 \
-              -A \
-              -k codemagic.keychain \
-              -f pkcs12 || true
-            echo "✅ 证书导入完成"
+          # 检查环境变量是否存在
+          if [ -z "$CM_CERTIFICATE" ]; then
+            echo "❌ 错误: CM_CERTIFICATE 环境变量为空！"
+            echo "请在 Codemagic Settings → Environment variables 里添加 CM_CERTIFICATE（值为 Cat_teacher.p12 的 base64 编码）"
+            exit 1
           fi
 
-          # 安装 Provisioning Profile
-          if [ -f "$CM_PROVISIONING_PROFILE" ]; then
-            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-            cp $CM_PROVISIONING_PROFILE ~/Library/MobileDevice/Provisioning\ Profiles/
-            echo "✅ Profile 已复制到 ~/Library/MobileDevice/Provisioning Profiles/"
+          if [ -z "$CM_PROVISIONING_PROFILE" ]; then
+            echo "❌ 错误: CM_PROVISIONING_PROFILE 环境变量为空！"
+            echo "请在 Codemagic Settings → Environment variables 里添加 CM_PROVISIONING_PROFILE（值为 .mobileprovision 的 base64 编码）"
+            exit 1
           fi
+
+          echo "📝 解码证书文件..."
+          echo "$CM_CERTIFICATE" | base64 -d > /tmp/certificate.p12
+          echo "📝 解码 Profile 文件..."
+          echo "$CM_PROVISIONING_PROFILE" | base64 -d > /tmp/profile.mobileprovision
+
+          echo "📋 文件大小检查:"
+          ls -lh /tmp/certificate.p12 /tmp/profile.mobileprovision
+
+          # 创建临时钥匙串并导入证书
+          echo "🔑 创建钥匙串并导入证书..."
+          security create-keychain -p "codemagic123" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "codemagic123" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+          # 导入 .p12 证书
+          security import /tmp/certificate.p12 \
+            -P "Chmchm811" \
+            -A \
+            -k build.keychain
+          echo "✅ 证书导入成功"
+
+          # 允许 codesign 访问私钥
+          security set-key-partition-list -S apple-tool:,apple: -s -k "codemagic123" build.keychain
+
+          # 复制 Provisioning Profile
+          echo "📋 安装 Provisioning Profile..."
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/com.huiqin.cat_teacher.mobileprovision
+          echo "✅ Profile 安装成功"
 
           # 验证
           echo ""
-          echo "📋 钥匙串中的签名身份:"
-          security find-identity -v -p codesigning codemagic.keychain | head -5
-      - name: 编译 iOS IPA（手动签名）
+          echo "🔍 验证钥匙串中的证书:"
+          security find-identity -v -p codesigning build.keychain
+
+          echo ""
+          echo "🔍 验证安装的 Profile:"
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: 编译 iOS IPA
         script: |
-          flutter build ipa --release --export-method app-store \
+          cd ios
+          pod install --repo-update || pod install
+          cd ..
+          flutter build ipa --release \
+            --export-method app-store \
             --build-name=1.0.0 \
             --build-number=1
+
     artifacts:
       - build/ios/ipa/*.ipa
+
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
