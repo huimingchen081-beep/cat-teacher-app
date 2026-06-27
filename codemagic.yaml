@@ -18,7 +18,7 @@ workflows:
           echo "$CM_CERTIFICATE" | base64 -d > /tmp/cert.p12
           ls -l /tmp/cert.p12
 
-          echo "=== 创建临时 build.keychain（避免 login.keychain 锁死）==="
+          echo "=== 创建临时 build.keychain ==="
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
@@ -47,36 +47,33 @@ workflows:
           cp /tmp/profile.mobileprovision ~/Library/MobileDevice/"Provisioning Profiles"/
           echo "✅ 证书和 Profile 安装完成"
 
-      - name: xcode-project 自动配置签名
+      - name: 自动配置签名
         script: |
           set -e
           xcode-project use-profiles
           echo "✅ 签名配置完成"
 
-      - name: xcodebuild 归档
+      - name: 构建并导出 IPA（一步完成）
         script: |
           set -e
-          xcodebuild -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -archivePath build/Runner.xcarchive \
-            -destination "generic/platform=iOS" \
-            clean archive
-          echo "✅ 归档成功！"
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner \
+            --configuration Release
+          echo "✅ IPA 构建完成！"
 
-      - name: 导出 IPA 并上传 TestFlight
+      - name: 上传 TestFlight
         script: |
           set -e
-          echo "=== 用 xcode-project 导出 IPA（自动匹配 Profile）==="
-          xcode-project export-ipa \
-            --archive build/Runner.xcarchive \
-            --export-path build/ipa
-          ls -l build/ipa/
-
-          echo "=== 上传 TestFlight ==="
-          xcrun altool --upload-app -f build/ipa/*.ipa -t ios \
+          IPA_FILE=$(find . -name "*.ipa" | head -1)
+          if [ -z "$IPA_FILE" ]; then
+            echo "❌ 未找到 IPA 文件"
+            exit 1
+          fi
+          echo "=== 找到 IPA: $IPA_FILE ==="
+          xcrun altool --upload-app -f "$IPA_FILE" -t ios \
             --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" || echo "⚠️ 上传失败，请手动上传"
 
     artifacts:
-      - build/ipa/*.ipa
+      - "**/*.ipa"
