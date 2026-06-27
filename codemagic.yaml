@@ -10,56 +10,69 @@ workflows:
     scripts:
       - name: flutter pub get
         script: |
-          set -e
           flutter pub get
 
-      - name: 解码并安装证书 + Profile
+      - name: 解码证书 + 安装 Profile + 生成 ExportOptions.plist
         script: |
           set -e
 
-          echo "$CM_CERTIFICATE" | base64 -d > /tmp/certificate.p12
+          echo "$CM_CERTIFICATE" | base64 -d > /tmp/cert.p12
           echo "$CM_PROVISIONING_PROFILE" | base64 -d > /tmp/profile.mobileprovision
 
-          echo "📋 文件大小:"
-          ls -lh /tmp/certificate.p12 /tmp/profile.mobileprovision
+          echo "📋 证书文件大小:"
+          ls -lh /tmp/cert.p12 /tmp/profile.mobileprovision
 
           # 导入证书到登录钥匙串
-          security import /tmp/certificate.p12 \
+          security import /tmp/cert.p12 \
             -P "Chmchm811" \
             -A \
             -k ~/Library/Keychains/login.keychain-db
           security set-key-partition-list -S apple-tool:,apple: -s \
             -k "Chmchm811" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
 
-          # 提取 Profile UUID 并安装
+          # 提取 Profile UUID 和名称
           PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
             | grep -A1 "<key>UUID</key>" | grep "<string>" \
             | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
-          echo "📋 Profile UUID: ${PROFILE_UUID}"
+          PROFILE_NAME=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
+            | grep -A1 "<key>Name</key>" | grep "<string>" \
+            | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
 
+          echo "📋 Profile UUID : ${PROFILE_UUID}"
+          echo "📋 Profile Name : ${PROFILE_NAME}"
+
+          # 安装 Profile（UUID 命名）
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
           if [ -n "$PROFILE_UUID" ]; then
             cp /tmp/profile.mobileprovision \
               "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
-          else
-            cp /tmp/profile.mobileprovision \
-              "$HOME/Library/MobileDevice/Provisioning Profiles/cat_teacher.mobileprovision"
           fi
 
-          echo "✅ 证书和 Profile 已安装"
+          # 用 PlistBuddy 动态生成 ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Clear dict" ios/ExportOptions.plist 2>/dev/null || \
+            rm -f ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :method string app-store" ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :teamID string 4ZSSBDC2TM" ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" ios/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.huiqin.cat_teacher string ${PROFILE_NAME}" ios/ExportOptions.plist
+
+          echo ""
+          echo "✅ ExportOptions.plist 已生成:"
+          cat ios/ExportOptions.plist
+
+          echo ""
+          echo "🔍 钥匙串证书:"
           security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
+          echo ""
+          echo "🔍 已安装 Profile:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
-          # 打印 Profile 里的 Team/Bundle 信息
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
-            | grep -E "(UUID|Name|com\.huiqin|4ZSSBDC2TM|Entitlements)" \
-            | head -20 || true
-
-      - name: 修改项目签名设置 + 归档
+      - name: 修改签名设置 + xcodebuild 归档
         script: |
           set -e
 
-          # 用 sed 把 Automatic 改成 Manual（不用 Python，避免 YAML 缩进冲突）
+          # pbxproj: Automatic → Manual
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' \
             ios/Runner.xcodeproj/project.pbxproj
 
@@ -68,10 +81,10 @@ workflows:
             sed -i '' 's/CODE_SIGN_STYLE = Manual;/CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;/g' \
             ios/Runner.xcodeproj/project.pbxproj
 
-          echo "🔍 签名设置验证:"
+          echo "🔍 签名设置:"
           grep -E "(CODE_SIGN_STYLE|DEVELOPMENT_TEAM)" ios/Runner.xcodeproj/project.pbxproj | head -10
 
-          # 用 xcodebuild 直接归档（Flutter SPM 模式，无需 Podfile）
+          echo ""
           echo "🔨 开始归档..."
           xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner \
@@ -80,57 +93,47 @@ workflows:
             -destination "generic/platform=iOS" \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=4ZSSBDC2TM \
-            clean archive 2>&1 | tail -200
+            clean archive
 
           echo ""
+          echo "✅ 归档成功"
+          ls -la build/Runner.xcarchive/ || true
+
+      - name: 导出 IPA + 上传 TestFlight
+        script: |
+          set -e
+
           echo "📦 导出 IPA..."
+          echo "🔍 ExportOptions.plist 内容:"
+          cat ios/ExportOptions.plist
+
           mkdir -p build/ios/ipa
+
           xcodebuild -exportArchive \
             -archivePath build/Runner.xcarchive \
             -exportPath build/ios/ipa \
-            -exportOptionsPlist ios/ExportOptions.plist 2>&1 | tail -80
+            -exportOptionsPlist ios/ExportOptions.plist
 
-          echo "✅ IPA 生成成功:"
-          ls -lh build/ios/ipa/
+          echo ""
+          echo "✅ IPA 导出成功:"
+          find build/ios/ipa -name "*.ipa" -exec ls -lh {} \;
 
-      - name: 手动上传 IPA 到 TestFlight
-        script: |
-          set -e
-          
-          echo "🚀 上传 IPA 到 TestFlight..."
-          
-          # 用 xcrun altool 上传（使用 App Store Connect API Key）
-          IPA_PATH=$(ls build/ios/ipa/*.ipa 2>/dev/null | head -1)
-          
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
           if [ -z "$IPA_PATH" ]; then
-            echo "❌ 没有找到 IPA 文件!"
-            ls -laR build/ios/ipa/ 2>/dev/null || true
+            echo "❌ 没有找到 IPA!"
+            ls -laR build/ios/ipa/ || true
             exit 1
           fi
-          
-          echo "📦 IPA 文件: $IPA_PATH"
-          ls -lh "$IPA_PATH"
-          
-          # 方法1: 用 altool + API Key 上传
-          echo "⬆️ 正在上传..."
+
+          echo ""
+          echo "🚀 上传到 TestFlight..."
           xcrun altool --upload-app \
             -f "$IPA_PATH" \
             -t ios \
             --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            2>&1 || {
-            
-            # 方法2: 如果 altool 失败，尝试用 Transporter 方式
-            echo "⚠️ altool 失败，尝试备用方式..."
-            xcrun altool --upload-app \
-              -f "$IPA_PATH" \
-              -t ios \
-              --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-              --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-              --verbose 2>&1 || true
-          }
-          
-          echo "✅ TestFlight 上传完成"
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+          echo "✅ 上传完成!"
 
     artifacts:
       - build/ios/ipa/*.ipa
