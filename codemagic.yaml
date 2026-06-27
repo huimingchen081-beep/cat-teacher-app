@@ -53,7 +53,7 @@ workflows:
           xcode-project use-profiles
           echo "✅ 签名配置完成"
 
-      - name: 构建并导出 IPA（一步完成）
+      - name: 构建并导出 IPA
         script: |
           set -e
           xcode-project build-ipa \
@@ -61,13 +61,26 @@ workflows:
             --scheme Runner \
             --archive-flags "-configuration Release"
           echo "✅ IPA 构建完成！"
+          ls -lh build/ios/ipa/
 
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
+      - name: 上传 TestFlight（手动脚本，完整输出）
+        script: |
+          set -e
+          echo "=== 写入 API Key ==="
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY" > /tmp/api_key.p8
+          echo "=== Key 文件前3行 ==="
+          head -3 /tmp/api_key.p8
+
+          echo ""
+          echo "=== 开始上传 ==="
+          app-store-connect publish \
+            --path build/ios/ipa/cat_teacher.ipa \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --private-key /tmp/api_key.p8
+          
+          echo ""
+          echo "✅ TestFlight 上传完成！"
 
     artifacts:
-      - "**/*.ipa"
+      - "build/ios/ipa/*.ipa"
