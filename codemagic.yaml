@@ -72,7 +72,8 @@ workflows:
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --private-key @env:APP_STORE_CONNECT_PRIVATE_KEY \
-            --testflight
+            --testflight \
+            --max-find-build-wait 30
           
           echo ""
           echo "✅ TestFlight 上传完成！"
