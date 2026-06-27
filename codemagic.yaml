@@ -62,18 +62,12 @@ workflows:
             --archive-flags "-configuration Release"
           echo "✅ IPA 构建完成！"
 
-      - name: 上传 TestFlight
-        script: |
-          set -e
-          IPA_FILE=$(find . -name "*.ipa" | head -1)
-          if [ -z "$IPA_FILE" ]; then
-            echo "❌ 未找到 IPA 文件"
-            exit 1
-          fi
-          echo "=== 找到 IPA: $IPA_FILE ==="
-          xcrun altool --upload-app -f "$IPA_FILE" -t ios \
-            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" || echo "⚠️ 上传失败，请手动上传"
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
 
     artifacts:
       - "**/*.ipa"
