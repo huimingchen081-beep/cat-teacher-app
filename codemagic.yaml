@@ -38,10 +38,8 @@ workflows:
       - name: xcode-project 自动配置签名
         script: |
           set -e
-          xcode-project use-profiles \
-            --project ios/Runner.xcodeproj \
-            --scheme Runner \
-            --configuration Release
+          xcode-project use-profiles
+          echo "✅ 签名配置完成"
 
       - name: xcodebuild 归档
         script: |
