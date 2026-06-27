@@ -5,181 +5,120 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      cocoapods: default
       groups:
         - app_store
     scripts:
-      - name: 安装 Flutter 依赖 + 生成 Podfile
+      - name: flutter pub get
         script: |
           set -e
           flutter pub get
 
-          echo "🔧 生成 iOS 配置和 Podfile..."
-          # flutter build ios 会触发 pod install 并生成正确的 Podfile
-          cd ios
-          # 先删掉可能存在的空 Podfile（由 pod init 生成的）
-          rm -f Podfile
-          cd ..
-
-          flutter build ios --release --no-codesign 2>&1 | tail -20 || true
-
-          echo "✅ 检查 Podfile:"
-          echo "✅ Podfile 已生成:"; ls -la ios/Podfile ios/Podfile.lock 2>/dev/null || echo "(将交由下一步 pod install 创建)"
-
-      - name: 解码并安装代码签名证书和Profile
+      - name: 解码并安装证书 + Profile
         script: |
           set -e
-          echo "🔍 检查环境变量..."
 
-          if [ -z "$CM_CERTIFICATE" ]; then
-            echo "❌ CM_CERTIFICATE 环境变量为空！"
-            exit 1
-          fi
-
-          if [ -z "$CM_PROVISIONING_PROFILE" ]; then
-            echo "❌ CM_PROVISIONING_PROFILE 环境变量为空！"
-            exit 1
-          fi
-
-          echo "📝 解码证书文件..."
           echo "$CM_CERTIFICATE" | base64 -d > /tmp/certificate.p12
-          echo "📝 解码 Profile 文件..."
           echo "$CM_PROVISIONING_PROFILE" | base64 -d > /tmp/profile.mobileprovision
 
-          echo "📋 文件大小检查:"
+          echo "📋 文件大小:"
           ls -lh /tmp/certificate.p12 /tmp/profile.mobileprovision
 
-          echo "🔑 导入证书到系统钥匙串..."
-          # 导入到登录钥匙串（xcodebuild 默认会访问这里）
+          # 导入证书到登录钥匙串
           security import /tmp/certificate.p12 \
             -P "Chmchm811" \
             -A \
             -k ~/Library/Keychains/login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s \
+            -k "Chmchm811" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
 
-          # 设置钥匙串允许 codesign 访问
-          security set-key-partition-list -S apple-tool:,apple: -s -k "Chmchm811" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
+          # 提取 Profile UUID 并安装
+          PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
+            | grep -A1 "<key>UUID</key>" | grep "<string>" \
+            | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
+          echo "📋 Profile UUID: ${PROFILE_UUID}"
 
-          echo "✅ 证书导入成功"
-
-          echo "📋 安装 Provisioning Profile..."
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
-
-          # 提取 Profile UUID
-          PROFILE_UUID=$(grep -A1 "<key>UUID</key>" /tmp/profile.mobileprovision 2>/dev/null | grep "<string>" | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
-
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "⚠️ 无法提取 UUID，使用默认名"
-            cp /tmp/profile.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/com.huiqin.cat_teacher.mobileprovision"
+          if [ -n "$PROFILE_UUID" ]; then
+            cp /tmp/profile.mobileprovision \
+              "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
           else
-            echo "✅ Profile UUID: $PROFILE_UUID"
-            cp /tmp/profile.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+            cp /tmp/profile.mobileprovision \
+              "$HOME/Library/MobileDevice/Provisioning Profiles/cat_teacher.mobileprovision"
           fi
 
-          echo "✅ Profile 安装成功"
-
-          echo ""
-          echo "🔍 验证钥匙串中的证书:"
+          echo "✅ 证书和 Profile 已安装"
           security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
-
-          echo ""
-          echo "🔍 验证安装的 Profile:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
-          echo ""
-          echo "🔍 查看 Profile 内容（Bundle ID 和 Team ID）:"
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -E "(com\.huiqin|4ZSSBDC2TM|UUID|Name|Entitlements)" | head -20 || true
+          # 打印 Profile 里的 Team/Bundle 信息
+          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
+            | grep -E "(UUID|Name|com\.huiqin|4ZSSBDC2TM|Entitlements)" \
+            | head -20 || true
 
-      - name: pod install + 修改 Xcode 项目签名设置
+      - name: flutter build ios（签名模式）
         script: |
           set -e
-          cd ios
 
-          echo "📦 执行 pod install..."
-          pod install
-
-          echo "🔧 修改 Xcode 项目为手动签名，并绑定 Profile UUID..."
+          # 先修改项目为手动签名
           python3 << 'PYEOF'
-          import re, subprocess, os
+import os, re
 
-          pbxproj = 'Runner.xcodeproj/project.pbxproj'
+pbxproj = 'ios/Runner.xcodeproj/project.pbxproj'
+with open(pbxproj, 'r') as f:
+    content = f.read()
 
-          # 先提取 Profile UUID
-          # 读取已安装的 Profile 文件名（UUID）
-          profile_dir = os.path.expanduser('~/Library/MobileDevice/Provisioning Profiles/')
-          profile_uuid = None
-          if os.path.exists(profile_dir):
-              files = [f for f in os.listdir(profile_dir) if f.endswith('.mobileprovision')]
-              if files:
-                  # 取第一个 .mobileprovision 文件的文件名（不含扩展名）作为 UUID
-                  profile_uuid = files[0].replace('.mobileprovision', '')
-                  print(f"✅ 找到 Profile UUID: {profile_uuid}")
+# 换成手动签名
+content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+# 确保有 DEVELOPMENT_TEAM
+if 'DEVELOPMENT_TEAM = 4ZSSBDC2TM;' not in content:
+    content = content.replace(
+        'CODE_SIGN_STYLE = Manual;',
+        'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;',
+    )
 
-          with open(pbxproj, 'r') as f:
-              content = f.read()
+# 读取安装的 Profile UUID
+profile_dir = os.path.expanduser('~/Library/MobileDevice/Provisioning Profiles/')
+profile_uuid = None
+if os.path.exists(profile_dir):
+    files = [f for f in os.listdir(profile_dir) if f.endswith('.mobileprovision')]
+    if files:
+        profile_uuid = files[0].replace('.mobileprovision', '')
+        print(f'Profile UUID: {profile_uuid}')
 
-          # 改为手动签名
-          content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+if profile_uuid:
+    # 在每个 buildSettings 块里添加 PROVISIONING_PROFILE
+    content = re.sub(
+        r'(CODE_SIGN_STYLE = Manual;)',
+        r'\1\n\t\t\tPROVISIONING_PROFILE = ' + profile_uuid + ';',
+        content
+    )
 
-          # 确保有 DEVELOPMENT_TEAM
-          if 'DEVELOPMENT_TEAM = 4ZSSBDC2TM;' not in content:
-              content = content.replace(
-                  'CODE_SIGN_STYLE = Manual;\n',
-                  'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;\n',
-                  1
-              )
+with open(pbxproj, 'w') as f:
+    f.write(content)
 
-          # 设置 PROVISIONING_PROFILE 为 UUID（让 Xcode 精确匹配）
-          if profile_uuid:
-              # 在 main Debug/Release buildSettings 里加上 PROVISIONING_PROFILE
-              # 匹配 "buildSettings = {" 段，在其后插入
-              old = 'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;\n'
-              new = old + f'\t\t\tPROVISIONING_PROFILE = {profile_uuid};\n'
-              content = content.replace(old, new, 1)
+print('✅ 项目已改为手动签名')
+PYEOF
 
-          with open(pbxproj, 'w') as f:
-              f.write(content)
-
-          print("✅ Xcode 项目已改为手动签名，已绑定 Profile UUID")
-          PYEOF
-
-          cd ..
-
-      - name: 编译 iOS IPA（xcodebuild 手动归档）
-        script: |
-          set -e
-
-          echo "🔨 开始 xcodebuild 归档..."
-
-          cd ios
-
-          # 查看可用的签名身份
-          echo "🔍 可用的签名证书:"
-          security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
-
-          # 查看已安装的 Profile
-          echo "🔍 已安装的 Provisioning Profile:"
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "（无）"
-
-          # 归档（手动签名，让 Xcode 自动匹配 Profile）
-          xcodebuild -workspace Runner.xcworkspace \
+          # 用 xcodebuild 直接归档（无需 Podfile，Flutter SPM 模式）
+          xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
             -archivePath build/Runner.xcarchive \
             -destination "generic/platform=iOS" \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=4ZSSBDC2TM \
-            clean archive 2>&1 | tail -150
+            clean archive 2>&1 | tail -200
 
+          echo ""
           echo "📦 导出 IPA..."
-          mkdir -p ../build/ios/ipa
-
+          mkdir -p build/ios/ipa
           xcodebuild -exportArchive \
             -archivePath build/Runner.xcarchive \
-            -exportPath ../build/ios/ipa \
-            -exportOptionsPlist ExportOptions.plist 2>&1 | tail -50
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist ios/ExportOptions.plist 2>&1 | tail -80
 
           echo "✅ IPA 生成成功:"
-          ls -lh ../build/ios/ipa/
+          ls -lh build/ios/ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
