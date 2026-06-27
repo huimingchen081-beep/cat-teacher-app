@@ -5,13 +5,15 @@ workflows:
     environment:
       flutter: stable
       xcode: 16.0
+      groups:
+        - app_store
     scripts:
       - name: 安装 Flutter 依赖
         script: flutter pub get
 
       - name: 解码证书 + 安装 Profile + 修改 pbxproj
         script: |
-          set -ex
+          set -e
 
           echo "=== 1. 解码证书和 Profile ==="
           echo "$CM_CERTIFICATE" | base64 -d > /tmp/certificate.p12
@@ -27,24 +29,22 @@ workflows:
             -k "Chmchm811" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
 
-          echo "=== 3. 提取 Profile UUID（plutil 方式）==="
-          # 方法1：直接 plutil 提取 UUID 字段
-          PROFILE_UUID=$(plutil -extract UUID xml1 -o - /tmp/profile.mobileprovision 2>/dev/null \
-            | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | head -1)
+          echo "=== 3. 提取 Profile UUID ==="
+          TEMP_PLIST=$(mktemp -t profile.XXXXXX.plist)
+          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null > "$TEMP_PLIST" || true
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "$TEMP_PLIST" 2>/dev/null || true)
+          rm -f "$TEMP_PLIST"
 
-          # 方法2：备用方案
           if [ -z "$PROFILE_UUID" ]; then
-            echo "plutil 直接提取失败，尝试 security cms -D ..."
-            TEMP_PLIST=$(mktemp -t profile.XXXXXX.plist)
-            security cms -D -i /tmp/profile.mobileprovision 2>/dev/null > "$TEMP_PLIST"
-            PROFILE_UUID=$(plutil -extract UUID xml1 -o - "$TEMP_PLIST" 2>/dev/null \
-              | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | head -1)
-            rm -f "$TEMP_PLIST"
+            echo "PlistBuddy 提取失败，尝试 sed 方式..."
+            PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
+              | grep -A1 "<key>UUID</key>" | grep "<string>" \
+              | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
           fi
 
           if [ -z "$PROFILE_UUID" ]; then
             echo "ERROR: 无法提取 Profile UUID！"
-            echo "Profile 内容预览（前50行）："
+            echo "Profile 内容预览："
             security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | head -50 || true
             exit 1
           fi
@@ -53,17 +53,17 @@ workflows:
 
           echo "=== 4. 安装 Profile 到标准位置 ==="
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles/"
-          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision" 2>/dev/null || true
           cp /tmp/profile.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
-          echo "Profile 已安装到: $HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+          echo "Profile 已安装"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/"
 
           echo "=== 5. 验证 Profile 内容 ==="
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -E "(Name|UUID|application-identifier|TeamIdentifier|TeamName)" | head -20 || true
+          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | grep -E "(Name|UUID|application-identifier|TeamIdentifier)" | head -20 || true
 
           echo "=== 6. 用 Ruby 修改 project.pbxproj ==="
           export PROFILE_UUID="$PROFILE_UUID"
           ruby ios/fix_signing.rb
+          echo "✅ pbxproj 修改完成！"
 
           echo "=== 7. xcodebuild 归档 ==="
           xcodebuild -workspace ios/Runner.xcworkspace \
@@ -75,14 +75,13 @@ workflows:
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             DEVELOPMENT_TEAM=4ZSSBDC2TM \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
-            PROVISIONING_PROFILE="$PROFILE_UUID" \
             clean archive
 
           echo "✅ 归档成功！"
 
       - name: 导出 IPA + 上传 TestFlight
         script: |
-          set -ex
+          set -e
 
           echo "=== 导出 IPA ==="
           xcodebuild -exportArchive \
