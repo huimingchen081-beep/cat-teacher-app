@@ -8,20 +8,18 @@ workflows:
       groups:
         - app_store
     scripts:
-      - name: 安装 Flutter 依赖
+      - name: Flutter 依赖
         script: flutter pub get
 
-      - name: 解码证书 + 安装 Profile + 修改 pbxproj
+      - name: 安装证书和 Profile
         script: |
           set -e
+          echo "=== 解码证书 ==="
+          echo "$CM_CERTIFICATE" | base64 -d > /tmp/cert.p12
+          ls -l /tmp/cert.p12
 
-          echo "=== 1. 解码证书和 Profile ==="
-          echo "$CM_CERTIFICATE" | base64 -d > /tmp/certificate.p12
-          echo "$CM_PROVISIONING_PROFILE" | base64 -d > /tmp/profile.mobileprovision
-          ls -la /tmp/certificate.p12 /tmp/profile.mobileprovision
-
-          echo "=== 2. 安装证书到 Keychain ==="
-          security import /tmp/certificate.p12 \
+          echo "=== 安装证书到 Keychain ==="
+          security import /tmp/cert.p12 \
             -P "Chmchm811" \
             -A \
             -k ~/Library/Keychains/login.keychain-db
@@ -29,78 +27,46 @@ workflows:
             -k "Chmchm811" ~/Library/Keychains/login.keychain-db 2>/dev/null || true
           security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
 
-          echo "=== 3. 提取 Profile UUID ==="
-          TEMP_PLIST=$(mktemp -t profile.XXXXXX.plist)
-          security cms -D -i /tmp/profile.mobileprovision 2>/dev/null > "$TEMP_PLIST" || true
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "$TEMP_PLIST" 2>/dev/null || true)
-          rm -f "$TEMP_PLIST"
+          echo "=== 解码并安装 Profile ==="
+          echo "$CM_PROVISIONING_PROFILE" | base64 -d > /tmp/profile.mobileprovision
+          ls -l /tmp/profile.mobileprovision
 
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "PlistBuddy 提取失败，尝试 sed 方式..."
-            PROFILE_UUID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
-              | grep -A1 "<key>UUID</key>" | grep "<string>" \
-              | sed -E 's/.*<string>(.*)<\/string>.*/\1/')
-          fi
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "✅ Profile 已安装到标准目录"
 
-          if [ -z "$PROFILE_UUID" ]; then
-            echo "ERROR: 无法提取 Profile UUID！"
-            echo "Profile 内容预览："
-            security cms -D -i /tmp/profile.mobileprovision 2>/dev/null | head -50 || true
-            exit 1
-          fi
+      - name: xcode-project 自动配置签名
+        script: |
+          set -e
+          xcode-project use-profiles \
+            --project ios/Runner.xcodeproj \
+            --scheme Runner \
+            --configuration Release
 
-          echo "✅ Profile UUID: $PROFILE_UUID"
-
-          echo "=== 4. 验证 Profile 的 App ID ==="
-          PROFILE_APP_ID=$(security cms -D -i /tmp/profile.mobileprovision 2>/dev/null \
-            | grep -A1 "<key>application-identifier</key>" | grep "<string>" \
-            | sed -E 's/.*<string>([^<]*).*/\1/' | head -1)
-          echo "Profile App ID: $PROFILE_APP_ID"
-          echo "项目 Bundle ID: com.huiqin.cat_teacher"
-
-          echo "=== 5. 安装 Profile 到标准位置 ==="
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles/"
-          cp /tmp/profile.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
-          echo "Profile 已安装"
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/"
-
-          echo "=== 6. 用 Ruby 修改 project.pbxproj ==="
-          export PROFILE_UUID="$PROFILE_UUID"
-          ruby ios/fix_signing.rb
-          echo "✅ pbxproj 修改完成！"
-
-          echo "=== 7. xcodebuild 归档 ==="
+      - name: xcodebuild 归档
+        script: |
+          set -e
           xcodebuild -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
             -archivePath build/Runner.xcarchive \
             -destination "generic/platform=iOS" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="iPhone Distribution" \
-            DEVELOPMENT_TEAM=4ZSSBDC2TM \
             clean archive
-
           echo "✅ 归档成功！"
 
-      - name: 导出 IPA + 上传 TestFlight
+      - name: 导出 IPA 并上传 TestFlight
         script: |
           set -e
-
-          echo "=== 导出 IPA ==="
           xcodebuild -exportArchive \
             -archivePath build/Runner.xcarchive \
-            -exportPath build/ios/ipa \
+            -exportPath build/ipa \
             -exportOptionsPlist ios/ExportOptions.plist
-
-          echo "=== IPA 文件 ==="
-          ls -la build/ios/ipa/
+          ls -l build/ipa/
 
           echo "=== 上传 TestFlight ==="
-          xcrun altool --upload-app -f build/ios/ipa/*.ipa -t ios \
+          xcrun altool --upload-app -f build/ipa/*.ipa -t ios \
             --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" || true
-
-          echo "✅ 上传完成"
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" || echo "⚠️ 上传失败，请手动上传"
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ipa/*.ipa
