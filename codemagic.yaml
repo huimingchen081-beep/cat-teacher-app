@@ -17,16 +17,13 @@ workflows:
           set -e
           echo "🔍 检查环境变量..."
 
-          # 检查环境变量是否存在
           if [ -z "$CM_CERTIFICATE" ]; then
-            echo "❌ 错误: CM_CERTIFICATE 环境变量为空！"
-            echo "请在 Codemagic Settings → Environment variables 里添加 CM_CERTIFICATE（值为 Cat_teacher.p12 的 base64 编码）"
+            echo "❌ CM_CERTIFICATE 环境变量为空！"
             exit 1
           fi
 
           if [ -z "$CM_PROVISIONING_PROFILE" ]; then
-            echo "❌ 错误: CM_PROVISIONING_PROFILE 环境变量为空！"
-            echo "请在 Codemagic Settings → Environment variables 里添加 CM_PROVISIONING_PROFILE（值为 .mobileprovision 的 base64 编码）"
+            echo "❌ CM_PROVISIONING_PROFILE 环境变量为空！"
             exit 1
           fi
 
@@ -38,30 +35,26 @@ workflows:
           echo "📋 文件大小检查:"
           ls -lh /tmp/certificate.p12 /tmp/profile.mobileprovision
 
-          # 创建临时钥匙串并导入证书
           echo "🔑 创建钥匙串并导入证书..."
           security create-keychain -p "codemagic123" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "codemagic123" build.keychain
           security set-keychain-settings -t 3600 -u build.keychain
 
-          # 导入 .p12 证书
           security import /tmp/certificate.p12 \
             -P "Chmchm811" \
             -A \
             -k build.keychain
-          echo "✅ 证书导入成功"
 
-          # 允许 codesign 访问私钥
           security set-key-partition-list -S apple-tool:,apple: -s -k "codemagic123" build.keychain
 
-          # 复制 Provisioning Profile
+          echo "✅ 证书导入成功"
+
           echo "📋 安装 Provisioning Profile..."
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
           cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/com.huiqin.cat_teacher.mobileprovision
           echo "✅ Profile 安装成功"
 
-          # 验证
           echo ""
           echo "🔍 验证钥匙串中的证书:"
           security find-identity -v -p codesigning build.keychain
@@ -70,15 +63,67 @@ workflows:
           echo "🔍 验证安装的 Profile:"
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
-      - name: 编译 iOS IPA
+      - name: 准备 iOS 构建（pod install + 修改签名设置）
         script: |
+          set -e
           cd ios
+
+          echo "📦 执行 pod install..."
           pod install --repo-update || pod install
+
+          echo "🔧 修改 Xcode 项目签名设置为手动..."
+          # 用 PlistBuddy 修改项目配置为手动签名
+          python3 << 'PYEOF'
+          import re
+
+          pbxproj = 'Runner.xcodeproj/project.pbxproj'
+
+          with open(pbxproj, 'r') as f:
+              content = f.read()
+
+          # 改为手动签名
+          content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+
+          # 添加 DEVELOPMENT_TEAM（如果还没有）
+          if 'DEVELOPMENT_TEAM = 4ZSSBDC2TM;' not in content:
+              content = content.replace('CODE_SIGN_STYLE = Manual;', 'CODE_SIGN_STYLE = Manual;\n\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;')
+
+          with open(pbxproj, 'w') as f:
+              f.write(content)
+
+          print("✅ Xcode 项目已改为手动签名")
+          PYEOF
+
           cd ..
-          flutter build ipa --release \
-            --export-method app-store \
-            --build-name=1.0.0 \
-            --build-number=1
+
+      - name: 编译 iOS IPA（使用 xcodebuild 手动归档）
+        script: |
+          set -e
+
+          echo "🔨 开始 xcodebuild 归档..."
+
+          cd ios
+
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath build/Runner.xcarchive \
+            -destination generic/platform=iOS \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=4ZSSBDC2TM \
+            PROVISIONING_PROFILE_SPECIFIER=com.huiqin.cat_teacher \
+            clean archive
+
+          echo "📦 导出 IPA..."
+          mkdir -p ../build/ios/ipa
+
+          xcodebuild -exportArchive \
+            -archivePath build/Runner.xcarchive \
+            -exportPath ../build/ios/ipa \
+            -exportOptionsPlist ../ios/ExportOptions.plist
+
+          echo "✅ IPA 生成成功:"
+          ls -lh ../build/ios/ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
