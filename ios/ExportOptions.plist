@@ -8,11 +8,6 @@
 	<string>export</string>
 	<key>signingStyle</key>
 	<string>manual</string>
-	<key>provisioningProfiles</key>
-	<dict>
-		<key>com.huiqin.cat_teacher</key>
-		<string>com.huiqin.cat_teacher</string>
-	</dict>
 	<key>teamID</key>
 	<string>4ZSSBDC2TM</string>
 </dict>
