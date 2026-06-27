@@ -59,7 +59,7 @@ workflows:
           xcode-project build-ipa \
             --workspace ios/Runner.xcworkspace \
             --scheme Runner \
-            --configuration Release
+            --archive-flags "-configuration Release"
           echo "✅ IPA 构建完成！"
 
       - name: 上传 TestFlight
