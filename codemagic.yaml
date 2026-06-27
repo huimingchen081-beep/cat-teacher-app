@@ -67,10 +67,10 @@ workflows:
       - name: 导出 IPA 并上传 TestFlight
         script: |
           set -e
-          xcodebuild -exportArchive \
-            -archivePath build/Runner.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ios/ExportOptions.plist
+          echo "=== 用 xcode-project 导出 IPA（自动匹配 Profile）==="
+          xcode-project export-ipa \
+            --archive build/Runner.xcarchive \
+            --export-path build/ipa
           ls -l build/ipa/
 
           echo "=== 上传 TestFlight ==="
