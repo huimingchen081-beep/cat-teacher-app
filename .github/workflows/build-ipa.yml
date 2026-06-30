@@ -43,6 +43,18 @@ jobs:
           echo "${{ secrets.PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/cat_teacher.mobileprovision
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
 
+      - name: Set development team in Xcode project
+        run: |
+          python3 -c "
+import re
+with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
+    content = f.read()
+content = re.sub(r'(buildSettings = \{)', r'\1\n\t\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;', content)
+with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
+    f.write(content)
+print('DEVELOPMENT_TEAM added to all build configurations')
+"
+
       - name: Get dependencies
         run: flutter pub get
 
