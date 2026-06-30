@@ -64,6 +64,21 @@ jobs:
             build/ios/ipa/*.ipa
           retention-days: 30
 
+      - name: Setup App Store Connect API Key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "${{ secrets.APPSTORE_API_KEY_BASE64 }}" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8
+          echo "API key installed: AuthKey_${{ secrets.APPSTORE_KEY_ID }}.p8"
+
+      - name: Upload to App Store Connect
+        run: |
+          xcrun altool --upload-app \
+            -f build/ios/ipa/*.ipa \
+            -t ios \
+            --apiKey "${{ secrets.APPSTORE_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APPSTORE_ISSUER_ID }}" \
+            --verbose
+
       - name: Cleanup keychain
         if: always()
         run: security delete-keychain build.keychain || true
