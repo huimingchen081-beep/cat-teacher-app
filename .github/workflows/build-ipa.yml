@@ -27,11 +27,13 @@ jobs:
         run: flutter doctor -v
 
       - name: Select latest Xcode (iOS 26+ SDK required)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Verify Xcode SDK version
         run: |
-          ls /Applications/ | grep -i xcode
-          sudo xcode-select -s /Applications/Xcode_*.app/Contents/Developer 2>/dev/null || true
           xcodebuild -version
-          xcodebuild -sdk iphoneos -version Path
           xcodebuild -sdk iphoneos -version SDKVersion
           xcodebuild -sdk iphoneos -version PlatformVersion
 
