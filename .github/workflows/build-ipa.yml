@@ -26,6 +26,15 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
+      - name: Select latest Xcode (iOS 26+ SDK required)
+        run: |
+          ls /Applications/ | grep -i xcode
+          sudo xcode-select -s /Applications/Xcode_*.app/Contents/Developer 2>/dev/null || true
+          xcodebuild -version
+          xcodebuild -sdk iphoneos -version Path
+          xcodebuild -sdk iphoneos -version SDKVersion
+          xcodebuild -sdk iphoneos -version PlatformVersion
+
       - name: Configure manual signing in Xcode project
         run: |
           # Add manual signing settings to all build configurations
