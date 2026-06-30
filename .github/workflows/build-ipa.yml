@@ -1,0 +1,41 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'Build number'
+        required: false
+        default: '1'
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+          channel: 'stable'
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build IPA (Release)
+        run: flutter build ipa --build-number=${{ github.event.inputs.build_number || '1' }} --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CatTeacher-iPA-${{ github.run_id }}
+          path: |
+            build/ios/ipa/*.ipa
+          retention-days: 30
