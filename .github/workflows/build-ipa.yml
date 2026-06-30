@@ -26,6 +26,11 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
+      - name: Set development team in Xcode project
+        run: |
+          sed -i '' 's/buildSettings = {/buildSettings = {\n\t\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;/g' ios/Runner.xcodeproj/project.pbxproj
+          grep -c "DEVELOPMENT_TEAM" ios/Runner.xcodeproj/project.pbxproj
+
       - name: Decode and import signing certificate
         run: |
           echo "${{ secrets.P12_BASE64 }}" | base64 --decode > signing-cert.p12
@@ -42,18 +47,6 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "${{ secrets.PROVISION_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/cat_teacher.mobileprovision
           ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Set development team in Xcode project
-        run: |
-          python3 -c "
-import re
-with open('ios/Runner.xcodeproj/project.pbxproj', 'r') as f:
-    content = f.read()
-content = re.sub(r'(buildSettings = \{)', r'\1\n\t\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;', content)
-with open('ios/Runner.xcodeproj/project.pbxproj', 'w') as f:
-    f.write(content)
-print('DEVELOPMENT_TEAM added to all build configurations')
-"
 
       - name: Get dependencies
         run: flutter pub get
