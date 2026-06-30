@@ -26,10 +26,12 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
-      - name: Set development team in Xcode project
+      - name: Configure manual signing in Xcode project
         run: |
-          sed -i '' 's/buildSettings = {/buildSettings = {\n\t\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;/g' ios/Runner.xcodeproj/project.pbxproj
-          grep -c "DEVELOPMENT_TEAM" ios/Runner.xcodeproj/project.pbxproj
+          # Add manual signing settings to all build configurations
+          sed -i '' 's/buildSettings = {/buildSettings = {\n\t\t\t\tDEVELOPMENT_TEAM = 4ZSSBDC2TM;\n\t\t\t\tCODE_SIGN_STYLE = Manual;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "Cat Teacher App Store";\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";/g' ios/Runner.xcodeproj/project.pbxproj
+          grep -c "CODE_SIGN_STYLE" ios/Runner.xcodeproj/project.pbxproj
+          grep "PROVISIONING_PROFILE_SPECIFIER" ios/Runner.xcodeproj/project.pbxproj
 
       - name: Decode and import signing certificate
         run: |
