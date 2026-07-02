@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=2048, height=2732">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 2048px; height: 2732px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; padding: 32px 96px; }
+.points-badge { display: flex; align-items: center; gap: 16px; padding: 24px 48px; background: linear-gradient(135deg, #FFE0B2, #FFCC80); border-radius: 64px; }
+.points-badge .star { font-size: 56px; }
+.points-badge .val { font-size: 56px; font-weight: 700; color: #E65100; }
+.signin-btn { padding: 24px 64px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 64px; color: #fff; font-size: 52px; font-weight: 500; }
+.grade-tabs { margin: 0 96px 48px; display: flex; background: #fff; border-radius: 80px; box-shadow: 0 8px 48px rgba(255,140,66,0.12); overflow: hidden; }
+.grade-tab { flex: 1; text-align: center; padding: 48px 0; }
+.grade-tab.active { background: linear-gradient(135deg, #FF8C42, #FFB885); color: #fff; border-radius: 80px; }
+.grade-tab .emoji { font-size: 72px; display: block; }
+.grade-tab .label { font-size: 52px; margin-top: 8px; display: block; }
+.grade-tab:not(.active) .label { color: #666; }
+.cat-section { display: flex; flex-direction: column; align-items: center; padding: 48px 0 40px; }
+.cat-avatar { width: 560px; height: 560px; border-radius: 50%; background: linear-gradient(135deg, #FFF0E0, #FFF8F0); box-shadow: 0 16px 80px rgba(255,140,66,0.15); display: flex; align-items: center; justify-content: center; font-size: 280px; }
+.cat-bubble { margin-top: 40px; padding: 40px 80px; background: #fff; border-radius: 64px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); font-size: 52px; color: #333; }
+.section-title { padding: 0 112px 32px; font-size: 56px; font-weight: 600; color: #333; }
+.subject-scroll { padding: 0 96px; display: flex; gap: 32px; }
+.subject-card { min-width: 256px; height: 304px; border-radius: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.subject-card.selected { background: #FFF0E0; border: 8px solid #FF8C42; box-shadow: 0 8px 32px rgba(255,140,66,0.15); }
+.subject-card:not(.selected) { background: #fff; border: 4px solid #EEE; }
+.subject-card .s-emoji { font-size: 96px; }
+.subject-card .s-name { font-size: 48px; font-weight: 600; margin-top: 16px; }
+.subject-card.selected .s-name { color: #FF8C42; }
+.subject-card:not(.selected) .s-name { color: #333; }
+.actions { padding: 64px 96px; display: flex; gap: 32px; }
+.action-card { flex: 1; background: #fff; border-radius: 56px; padding: 56px; box-shadow: 0 8px 32px rgba(0,0,0,0.04); }
+.action-card .a-icon { font-size: 96px; }
+.action-card .a-label { font-size: 56px; font-weight: 600; color: #333; margin-top: 16px; }
+.action-card .a-desc { font-size: 44px; color: #999; margin-top: 8px; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 280px; background: #fff; border-top: 4px solid #EEE; display: flex; padding-bottom: 40px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.nav-item .n-icon { font-size: 88px; }
+.nav-item .n-label { font-size: 44px; margin-top: 8px; color: #999; }
+.nav-item.active .n-label { color: #FF8C42; }
+.wrap { padding-bottom: 240px; }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="points-badge"><span class="star">⭐</span><span class="val">128</span></div>
+  <div class="signin-btn">签到</div>
+</div>
+<div class="grade-tabs">
+  <div class="grade-tab active"><span class="emoji">🌟</span><span class="label">小学</span></div>
+  <div class="grade-tab"><span class="emoji">📚</span><span class="label">初中</span></div>
+  <div class="grade-tab"><span class="emoji">🎓</span><span class="label">高中</span></div>
+</div>
+<div class="cat-section">
+  <div class="cat-avatar">🐱</div>
+  <div class="cat-bubble">喵~ 选一个学科，我来教你！</div>
+</div>
+<div class="wrap">
+<div class="section-title">选择学科</div>
+<div class="subject-scroll">
+  <div class="subject-card selected"><span class="s-emoji">📖</span><span class="s-name">语文</span></div>
+  <div class="subject-card"><span class="s-emoji">🔢</span><span class="s-name">数学</span></div>
+  <div class="subject-card"><span class="s-emoji">🌍</span><span class="s-name">英语</span></div>
+  <div class="subject-card"><span class="s-emoji">⚖️</span><span class="s-name">道法</span></div>
+  <div class="subject-card"><span class="s-emoji">🔬</span><span class="s-name">科学</span></div>
+</div>
+<div style="padding: 64px 96px;">
+  <div class="section-title" style="padding:0 0 32px 0">快捷入口</div>
+  <div class="actions" style="padding:0">
+    <div class="action-card"><div class="a-icon">💬</div><div class="a-label">提问猫咪</div><div class="a-desc">问任何学习问题</div></div>
+    <div class="action-card"><div class="a-icon">🎓</div><div class="a-label">猫咪讲课</div><div class="a-desc">按教材章节上课</div></div>
+  </div>
+</div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item active"><span class="n-icon">🏠</span><span class="n-label">首页</span></div>
+  <div class="nav-item"><span class="n-icon">💬</span><span class="n-label">对话</span></div>
+  <div class="nav-item"><span class="n-icon">👤</span><span class="n-label">我的</span></div>
+</div>
+</body>
+</html>

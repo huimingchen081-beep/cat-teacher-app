@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=2048, height=2732">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 2048px; height: 2732px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.app-bar { height: 192px; background: #FF8C42; display: flex; align-items: center; padding: 0 96px; }
+.app-bar .title { font-size: 64px; color: #fff; font-weight: 600; }
+.mode-bar { background: #FF8C42; padding: 24px 72px 32px; display: flex; align-items: center; gap: 32px; }
+.mode-btn { padding: 24px 56px; border-radius: 64px; font-size: 52px; font-weight: 600; }
+.mode-btn:not(.active) { background: rgba(255,255,255,0.2); color: #fff; }
+.mode-btn.active { background: #fff; color: #FF8C42; }
+.mode-bar .subject-tag { margin-left: auto; font-size: 64px; background: rgba(255,255,255,0.15); padding: 16px 40px; border-radius: 48px; }
+.msg-list { flex: 1; padding: 32px 72px 400px; }
+.msg { display: flex; margin-bottom: 48px; align-items: flex-start; }
+.msg.bot { justify-content: flex-start; }
+.msg.bot .avatar { width: 128px; height: 128px; border-radius: 50%; background: #FFF0E0; display: flex; align-items: center; justify-content: center; font-size: 72px; margin-right: 32px; flex-shrink: 0; }
+.msg .bubble { max-width: 1200px; padding: 40px 56px; border-radius: 64px; font-size: 54px; line-height: 1.7; }
+.msg.bot .bubble { background: #fff; color: #333; border-top-left-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+.system-msg { text-align: center; margin: 32px 120px; }
+.system-msg .sys-card { display: inline-block; padding: 40px 72px; background: linear-gradient(135deg, #FFF0E0, #FFE8D0); border-radius: 48px; border: 2px solid #FFD0B0; font-size: 50px; color: #996633; line-height: 1.7; text-align: center; }
+.lecture-section { margin-bottom: 16px; }
+.lecture-label { font-size: 52px; font-weight: 700; margin-bottom: 8px; display: block; }
+.lecture-section .obj { color: #2E7D32; }
+.lecture-section .know { color: #1565C0; }
+.lecture-section .quiz { color: #E65100; }
+.lecture-section .summary { color: #6A1B9A; }
+.input-bar { position: fixed; bottom: 280px; left: 0; right: 0; background: #fff; border-top: 4px solid #EEE; padding: 32px 48px 40px; display: flex; align-items: center; gap: 24px; }
+.plus-btn { width: 144px; height: 144px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 80px; color: #666; }
+.input-field { flex: 1; padding: 40px 56px; background: #F5F5F5; border-radius: 76px; font-size: 56px; color: #999; border: none; outline: none; }
+.mic-btn { width: 144px; height: 144px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+.send-btn { padding: 40px 72px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 76px; color: #fff; font-size: 52px; font-weight: 600; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 280px; background: #fff; border-top: 4px solid #EEE; display: flex; padding-bottom: 40px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.nav-item .n-icon { font-size: 88px; }
+.nav-item .n-label { font-size: 44px; margin-top: 8px; color: #999; }
+.nav-item.active .n-label { color: #FF8C42; }
+</style>
+</head>
+<body>
+<div class="app-bar"><span class="title">猫咪老师</span></div>
+<div class="mode-bar">
+  <div class="mode-btn">问我</div>
+  <div class="mode-btn active">讲课</div>
+  <span class="subject-tag">📖</span>
+</div>
+<div class="msg-list">
+  <div class="system-msg">
+    <div class="sys-card">
+      🎓 <b>讲课模式已就绪</b><br>
+      📚 部编版 · 一年级上册<br>
+      📖 第四单元 · 课文<br>
+      📝 课文：四季<br>
+      ━━━━━━━━━━━━<br>
+      猫咪老师正在准备语文课程...
+    </div>
+  </div>
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">
+      <div class="lecture-section">
+        <span class="lecture-label obj">📋 学习目标</span>
+        1. 正确朗读课文《四季》<br>
+        2. 认识草芽、荷叶、谷穗、雪人<br>
+        3. 理解四季的特点和变化
+      </div>
+      <div style="border-top:2px solid #EEE; margin:32px 0"></div>
+      <div class="lecture-section">
+        <span class="lecture-label know">📚 知识讲解</span>
+        <b>🌱 春天</b>——<i>草芽尖尖，他对小鸟说："我是春天。"</i><br>
+        春天万物复苏，小草从泥土里钻出尖尖的嫩芽。草芽弯弯的、尖尖的，像在和小鸟打招呼。<br><br>
+        <b>🌸 夏天</b>——<i>荷叶圆圆，他对青蛙说："我是夏天。"</i><br>
+        夏天池塘里荷叶碧绿圆润，青蛙在荷叶上呱呱叫。圆圆代表饱满、生机勃勃。<br><br>
+        <b>🍂 秋天</b>——<i>谷穗弯弯，他鞠着躬说："我是秋天。"</i><br>
+        秋天稻谷成熟，金黄的谷穗沉甸甸地弯下腰，像在鞠躬感谢大地。<br><br>
+        <b>☃️ 冬天</b>——<i>雪人大肚子一挺，他顽皮地说："我就是冬天。"</i><br>
+        冬天雪花飘飘，小朋友堆起白白胖胖的雪人，挺着大肚子，调皮又可爱！
+      </div>
+      <div style="border-top:2px solid #EEE; margin:32px 0"></div>
+      <div class="lecture-section">
+        <span class="lecture-label quiz">✏️ 课堂小测验</span>
+        1. 春天谁在说话？<br>
+        → 草芽对小鸟说："我是春天。"<br>
+        2. 四季分别有什么代表事物？<br>
+        → 春：草芽 | 夏：荷叶 | 秋：谷穗 | 冬：雪人
+      </div>
+      <div style="border-top:2px solid #EEE; margin:32px 0"></div>
+      <div class="lecture-section">
+        <span class="lecture-label summary">📝 小结</span>
+        今天我们学习了《四季》这篇课文。每个季节都有自己独特的景色和代表事物：春天有尖尖的草芽，夏天有圆圆的荷叶，秋天有弯弯的谷穗，冬天有挺着大肚子的雪人。请同学们有感情地朗读课文，想象每个季节的画面~
+      </div>
+    </div>
+  </div>
+</div>
+<div class="input-bar">
+  <div class="plus-btn">＋</div>
+  <input class="input-field" placeholder="输入问题或拍照解题...">
+  <div class="mic-btn">🎤</div>
+  <div class="send-btn">发送</div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item"><span class="n-icon">🏠</span><span class="n-label">首页</span></div>
+  <div class="nav-item active"><span class="n-icon">💬</span><span class="n-label">对话</span></div>
+  <div class="nav-item"><span class="n-icon">👤</span><span class="n-label">我的</span></div>
+</div>
+</body>
+</html>

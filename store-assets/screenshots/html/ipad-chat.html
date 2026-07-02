@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=2048, height=2732">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 2048px; height: 2732px; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #FFF8F0; }
+.app-bar { height: 192px; background: #FF8C42; display: flex; align-items: center; padding: 0 96px; }
+.app-bar .title { font-size: 64px; color: #fff; font-weight: 600; }
+.mode-bar { background: #FF8C42; padding: 24px 72px 32px; display: flex; align-items: center; gap: 32px; }
+.mode-btn { padding: 24px 56px; border-radius: 64px; font-size: 52px; font-weight: 600; }
+.mode-btn.active { background: #fff; color: #FF8C42; }
+.mode-btn:not(.active) { background: rgba(255,255,255,0.2); color: #fff; }
+.mode-bar .subject-tag { margin-left: auto; font-size: 64px; background: rgba(255,255,255,0.15); padding: 16px 40px; border-radius: 48px; }
+.msg-list { flex: 1; padding: 32px 72px 400px; }
+.msg { display: flex; margin-bottom: 48px; align-items: flex-start; }
+.msg.bot { justify-content: flex-start; }
+.msg.user { justify-content: flex-end; }
+.msg.bot .avatar { width: 128px; height: 128px; border-radius: 50%; background: #FFF0E0; display: flex; align-items: center; justify-content: center; font-size: 72px; margin-right: 32px; flex-shrink: 0; }
+.msg .bubble { max-width: 1120px; padding: 40px 56px; border-radius: 64px; font-size: 56px; line-height: 1.6; word-break: break-word; }
+.msg.bot .bubble { background: #fff; color: #333; border-top-left-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+.msg.user .bubble { background: #FF8C42; color: #fff; border-top-right-radius: 16px; }
+.input-bar { position: fixed; bottom: 280px; left: 0; right: 0; background: #fff; border-top: 4px solid #EEE; padding: 32px 48px 40px; display: flex; align-items: center; gap: 24px; }
+.plus-btn { width: 144px; height: 144px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 80px; color: #666; }
+.input-field { flex: 1; padding: 40px 56px; background: #F5F5F5; border-radius: 76px; font-size: 56px; color: #999; border: none; outline: none; }
+.mic-btn { width: 144px; height: 144px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+.send-btn { padding: 40px 72px; background: linear-gradient(135deg, #FF8C42, #FFB885); border-radius: 76px; color: #fff; font-size: 52px; font-weight: 600; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 280px; background: #fff; border-top: 4px solid #EEE; display: flex; padding-bottom: 40px; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.nav-item .n-icon { font-size: 88px; }
+.nav-item .n-label { font-size: 44px; margin-top: 8px; color: #999; }
+.nav-item.active .n-label { color: #FF8C42; }
+</style>
+</head>
+<body>
+<div class="app-bar"><span class="title">猫咪老师</span></div>
+<div class="mode-bar">
+  <div class="mode-btn active">问我</div>
+  <div class="mode-btn">讲课</div>
+  <span class="subject-tag">🔢</span>
+</div>
+<div class="msg-list">
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">喵~ 我是猫咪老师！<br>我是你专属的小学数学辅导老师，有什么问题尽管问我吧！</div>
+  </div>
+  <div class="msg user">
+    <div class="bubble">一个三角形面积是24平方厘米，底是8厘米，高是多少？</div>
+  </div>
+  <div class="msg bot">
+    <div class="avatar">🐱</div>
+    <div class="bubble">喵~ 这道题很简单！<br><br>三角形面积公式：<br>S = 底 × 高 ÷ 2<br><br>已知 S=24，底=8<br>24 = 8 × 高 ÷ 2<br>24 = 4 × 高<br>高 = 24 ÷ 4 = <b>6厘米</b><br><br>答案是 <b>6厘米</b>！</div>
+  </div>
+</div>
+<div class="input-bar">
+  <div class="plus-btn">＋</div>
+  <input class="input-field" placeholder="输入问题或拍照解题...">
+  <div class="mic-btn">🎤</div>
+  <div class="send-btn">发送</div>
+</div>
+<div class="bottom-nav">
+  <div class="nav-item"><span class="n-icon">🏠</span><span class="n-label">首页</span></div>
+  <div class="nav-item active"><span class="n-icon">💬</span><span class="n-label">对话</span></div>
+  <div class="nav-item"><span class="n-icon">👤</span><span class="n-label">我的</span></div>
+</div>
+</body>
+</html>

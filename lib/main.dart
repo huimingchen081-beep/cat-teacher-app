@@ -6,6 +6,7 @@ import 'providers/app_state.dart';
 import 'pages/home_page.dart';
 import 'pages/chat_page.dart';
 import 'pages/profile_page.dart';
+import 'services/tts_service.dart';
 
 void main() {
   runApp(

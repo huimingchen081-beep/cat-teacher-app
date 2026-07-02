@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
+import '../services/tts_service.dart';
 
 class AppState extends ChangeNotifier {
   // 年级
@@ -55,6 +56,9 @@ class AppState extends ChangeNotifier {
     final today = _todayString();
     _signedToday = _lastSignDate == today;
     notifyListeners();
+
+    // 后台清理超过24小时的TTS临时文件
+    TtsService.cleanupOldFiles();
   }
 
   String _todayString() {

@@ -160,7 +160,7 @@ class ProfilePage extends StatelessWidget {
           _buildMenuItem('⚙️', '设置', '应用设置与偏好', () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage()));
           }),
-          _buildMenuItem('💡', '关于猫咪老师', '版本 1.0.0', () {
+          _buildMenuItem('💡', '关于猫咪老师', '版本 1.0.1', () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutPage()));
           }),
         ],

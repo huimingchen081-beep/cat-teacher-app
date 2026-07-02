@@ -180,4 +180,24 @@ class TtsService {
     await file.writeAsBytes(bytes);
     return file.path;
   }
+
+  /// 清理超过24小时的TTS临时文件，防止存储堆积
+  static Future<void> cleanupOldFiles({Duration maxAge = const Duration(hours: 24)}) async {
+    try {
+      final dir = Directory(Directory.systemTemp.path);
+      if (!await dir.exists()) return;
+
+      final now = DateTime.now();
+      await for (final entity in dir.list()) {
+        if (entity is File && entity.path.contains('cat_tts_')) {
+          final stat = await entity.stat();
+          if (now.difference(stat.modified).compareTo(maxAge) > 0) {
+            await entity.delete();
+          }
+        }
+      }
+    } catch (_) {
+      // 静默失败，清理不是关键功能
+    }
+  }
 }
